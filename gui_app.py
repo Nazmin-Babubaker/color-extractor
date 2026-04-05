@@ -1,60 +1,88 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox 
-from PIL import ImageTk, Image              
+from tkinter import filedialog, messagebox
+from PIL import Image, ImageTk
 from extractor import extract_palette, get_dominant_colors, rgb_to_hex
 
-class ColorExtractorGUI: 
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Chromatica - GUI Edition")
-        self.root.geometry("600x500")
-        self.root.configure(bg="#fff0f5") 
+
+class ModernExtractorApp(tk.Tk):
+    def __init__(self):
+        super().__init__()
+
+      
+        self.title("Chromatica Professional")
+        self.geometry("850x600")
+        self.configure(bg="#BBE1F0")
+
+       
+        self.header_frame = tk.Frame(self, bg="#BBE1F0")
+        self.header_frame.pack(pady=40)
+
+        self.title_label = tk.Label(self.header_frame, text="CHROMATICA", 
+                                    font=("Helvetica", 28, "bold"), 
+                                    bg="#BBE1F0", fg="#0B2D72")
+        self.title_label.pack()
+
+        self.desc_label = tk.Label(self.header_frame, text="Image Color Analysis & Palette Generation", 
+                                   font=("Helvetica", 10), bg="#BBE1F0", fg="#888")
+        self.desc_label.pack()
 
         
-        self.label = tk.Label(root, text="Chromatica Color Extractor", 
-                              font=("Arial", 18, "bold"), bg="#fff0f5", fg="#ff69b4")
-        self.label.pack(pady=20)
-
-        self.upload_btn = tk.Button(root, text="Upload Image", command=self.open_file,
-                                    bg="#ff69b4", fg="white", font=("Arial", 12, "bold"))
+        self.upload_btn = tk.Button(self, text="UPLOAD IMAGE", 
+                                    command=self.process_image,
+                                    font=("Helvetica", 10, "bold"),
+                                    bg="#0AC4E0", fg="white",
+                                    activebackground="#0B2D72", activeforeground="white",
+                                    padx=30, pady=10, bd=0, cursor="hand2")
         self.upload_btn.pack(pady=10)
 
         
-        self.result_frame = tk.Frame(root, bg="#fff0f5")
-        self.result_frame.pack(pady=20)
+        self.results_container = tk.Frame(self, bg="#BBE1F0")
+        self.results_container.pack(expand=True, fill="both", padx=50, pady=20)
 
-    def open_file(self):
+    def process_image(self):
+       
+        file_path = filedialog.askopenfilename()
+        if not file_path:
+            return
+
+        try:
         
-        file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.jpg *.png *.jpeg")])
+            pixels = extract_palette(file_path)
+            colors = get_dominant_colors(pixels)
+
+            
+            for widget in self.results_container.winfo_children():
+                widget.destroy()
+
+           
+            for i, (color_tuple, count) in enumerate(colors):
+                hex_code = rgb_to_hex(color_tuple)
+                self.create_color_card(i, hex_code)
+
+        except Exception as e:
+            
+            messagebox.showerror("Process Error", f"Failed to analyze image: {e}")
+
+    def create_color_card(self, index, hex_code):
+       
+        card = tk.Frame(self.results_container, bg="white", padx=10, pady=15, 
+                        highlightbackground="#E6E5E1", highlightthickness=2)
+        card.grid(row=0, column=index, padx=10, sticky="nsew")
+
+        # The Color Box
+        color_display = tk.Label(card, bg=hex_code, width=12, height=6)
+        color_display.pack(pady=(0, 10))
+
         
-        if file_path:
-            try:
-               
-                pixels = extract_palette(file_path)
-                top_colors = get_dominant_colors(pixels)
-                
-               
-                for widget in self.result_frame.winfo_children():
-                    widget.destroy()
+        hex_label = tk.Label(card, text=hex_code, font=("Courier", 11, "bold"), 
+                             bg="white", fg="#333")
+        hex_label.pack()
 
-                
-                for color_tuple, count in top_colors:
-                    hex_val = rgb_to_hex(color_tuple)
-                    
-                    
-                    color_box = tk.Label(self.result_frame, bg=hex_val, width=10, height=5, relief="raised")
-                    color_box.pack(side=tk.LEFT, padx=5)
-                    
-                    
-                    hex_label = tk.Label(self.result_frame, text=hex_val, bg="#fff0f5", fg="#333")
-                    hex_label.pack(side=tk.LEFT)
-
-            except Exception as e:
-                
-                messagebox.showerror("Error", f"Could not process image: {e}")
-
+        
+        copy_hint = tk.Label(card, text="Dominant Color", font=("Helvetica", 7), 
+                             bg="white", fg="#AAA")
+        copy_hint.pack()
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = ColorExtractorGUI(root)
-    root.mainloop()
+    app = ModernExtractorApp()
+    app.mainloop()
